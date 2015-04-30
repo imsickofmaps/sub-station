@@ -4,9 +4,9 @@ import socket
 import json
 import logging
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
-host = os.environ.get('STOMP_HOST', "control.onelessthing.co.za")
+host = os.environ.get('STOMP_HOST', "localhost")
 port = os.environ.get('STOMP_PORT', 61613)
 client = os.environ.get('SUBSTATION_ID', "Unknown")
 destination = os.environ.get('STOMP_TOPIC', '/topic/substations')
