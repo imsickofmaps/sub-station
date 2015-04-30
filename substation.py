@@ -13,7 +13,7 @@ destination = os.environ.get('STOMP_TOPIC', '/topic/substations')
 
 
 def connect():
-    conn = stomp.Connection(host_and_ports=[(host, port)])
+    conn = stomp.Connection(host_and_ports=[(host, int(port))])
     try:
         print('Connecting as <%s> to <%s:%s>' % (client, host, port))
         conn.start()
