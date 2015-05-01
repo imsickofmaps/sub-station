@@ -13,6 +13,8 @@ client = os.environ.get('SUBSTATION_ID', "demo")
 destination = os.environ.get('STOMP_TOPIC', '/topic/substations')
 scanner = os.environ.get('SCANNER', '/dev/input/event0')
 
+conn = stomp.Connection(host_and_ports=[(host, int(port))])
+
 
 def find_input():
     devices = [InputDevice(fn) for fn in list_devices()]
@@ -22,6 +24,34 @@ def find_input():
 
 def attach_scanner():
     return InputDevice(scanner)
+
+
+def connect():
+    try:
+        print('Connecting as <%s> to <%s:%s>' % (client, host, port))
+        conn.start()
+        conn.connect()
+        message = json.dumps({"client": client,
+                              "command": "connection",
+                              "value": "%s: Reporting for duty" % client})
+        conn.send(body=message, destination=destination)
+        return True
+
+    except stomp.exception.ConnectFailedException:
+        print('Unable to connect to Stomp server')
+    except socket.error:
+        print('Stomp unable to get a socket')
+
+
+def sender(command, value):
+    if value != "restart":
+        print('Sending command <%s> value <%s> to server.\n' %
+              (command, value, ))
+        message = json.dumps({"client": client,
+                              "command": command,
+                              "value": value})
+        conn.send(body=message, destination=destination)
+    return True
 
 
 def read_input(dev):
@@ -45,8 +75,10 @@ def read_input(dev):
         50: u'M', 51: u'<', 52: u'>', 53: u'?', 54: u'RSHFT', 56: u'LALT', 100: u'RALT'
     }
     # setup vars
-    x = ''
+    input_buffer = ''
     caps = False
+    command = None
+    value = None
 
     # grab that shit
     dev.grab()
@@ -69,57 +101,29 @@ def read_input(dev):
                     key_lookup = u'{}'.format(scancodes.get(data.scancode)) or u'UNKNOWN:[{}]'.format(
                         data.scancode)  # Lookup or return UNKNOWN:XX
                 if (data.scancode != 42) and (data.scancode != 28):
-                    x += key_lookup  # Print it all out!
+                    input_buffer += key_lookup  # Print it all out!
                 if(data.scancode == 28):
-                    print x
-                    x = ''
+                    if command is None:
+                        command = input_buffer
+                        value = None
+                    else:
+                        value = input_buffer
+                        sender(command, value)
+                        command = None
+                        value = None
+                    input_buffer = ''
 
-
-def connect():
-    conn = stomp.Connection(host_and_ports=[(host, int(port))])
-    try:
-        print('Connecting as <%s> to <%s:%s>' % (client, host, port))
-        conn.start()
-        conn.connect()
-        message = json.dumps({"client": client,
-                              "command": "connection",
-                              "value": "%s: Reporting for duty" % client})
-        conn.send(body=message, destination=destination)
-        return conn
-
-    except stomp.exception.ConnectFailedException:
-        print('Unable to connect to Stomp server')
-    except socket.error:
-        print('Stomp unable to get a socket')
-
-
-def main(conn):
-    while True:
-        # Get user input
-        command = raw_input('Enter command: ')
-
-        # Ask for value
-        value = raw_input('Enter value: ')
-        if value != "restart":
-            print('Sending command <%s> value <%s> to server.\n' %
-                  (command, value, ))
-            message = json.dumps({"client": client,
-                                  "command": command,
-                                  "value": value})
-            conn.send(body=message, destination=destination)
-        continue
 
 try:
     find_input()
+    connect()
     scanner = attach_scanner()
     read_input(scanner)
-    # conn = connect()
-    # main(conn)
 except KeyboardInterrupt:
-    # message = json.dumps({"client": client,
-    #                       "command": "connection",
-    #                       "value": "%s: Disconnected gracefully" % client})
-    # conn.send(body=message, destination=destination)
-    # conn.disconnect()
+    message = json.dumps({"client": client,
+                          "command": "connection",
+                          "value": "%s: Disconnected gracefully" % client})
+    conn.send(body=message, destination=destination)
+    conn.disconnect()
     print('\n\nKeyboard exception received. Exiting.')
     exit()
