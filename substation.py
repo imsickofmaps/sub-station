@@ -25,6 +25,7 @@ def attach_scanner():
 
 
 def read_input(dev):
+    print("Reading from %s" % dev.name)
     scancodes = {
         # Scancode: ASCIICode
         0: None, 1: u'ESC', 2: u'1', 3: u'2', 4: u'3', 5: u'4', 6: u'5', 7: u'6', 8: u'7', 9: u'8',
@@ -109,6 +110,7 @@ def main(conn):
         continue
 
 try:
+    find_input()
     scanner = attach_scanner()
     read_input(scanner)
     # conn = connect()
