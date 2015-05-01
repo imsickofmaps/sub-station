@@ -3,6 +3,7 @@ import stomp
 import socket
 import json
 import logging
+from evdev import InputDevice, list_devices
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -10,6 +11,12 @@ host = os.environ.get('STOMP_HOST', "localhost")
 port = os.environ.get('STOMP_PORT', 61613)
 client = os.environ.get('SUBSTATION_ID', "demo")
 destination = os.environ.get('STOMP_TOPIC', '/topic/substations')
+
+
+def find_input():
+    devices = [InputDevice(fn) for fn in list_devices()]
+    for dev in devices:
+        print(dev.fn, dev.name, dev.phys)
 
 
 def connect():
@@ -47,6 +54,7 @@ def main(conn):
         continue
 
 try:
+    find_input()
     conn = connect()
     main(conn)
 except KeyboardInterrupt:

@@ -5,7 +5,7 @@ RUN apt-get update \
     # Remove package lists to free up space
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install stomp.py==4.0.16
+RUN pip install stomp.py==4.0.16 evdev
 
 ADD . /app
 
