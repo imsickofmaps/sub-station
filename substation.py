@@ -50,7 +50,11 @@ def sender(command, value):
         message = json.dumps({"client": client,
                               "command": command,
                               "value": value})
-        conn.send(body=message, destination=destination)
+        try:
+            conn.send(body=message, destination=destination)
+        except stomp.exception.NotConnectedException:
+            conn = connect()
+            conn.send(body=message, destination=destination)
     return True
 
 
