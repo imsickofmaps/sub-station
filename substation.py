@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 host = os.environ.get('STOMP_HOST', "localhost")
 port = os.environ.get('STOMP_PORT', 61613)
-client = os.environ.get('SUBSTATION_ID', "Unknown")
+client = os.environ.get('SUBSTATION_ID', "demo")
 destination = os.environ.get('STOMP_TOPIC', '/topic/substations')
 
 
@@ -20,7 +20,7 @@ def connect():
         conn.connect()
         message = json.dumps({"client": client,
                               "command": "connection",
-                              "value": "Reporting for duty"})
+                              "value": "%s: Reporting for duty" % client})
         conn.send(body=message, destination=destination)
         return conn
 
@@ -50,6 +50,10 @@ try:
     conn = connect()
     main(conn)
 except KeyboardInterrupt:
+    message = json.dumps({"client": client,
+                          "command": "connection",
+                          "value": "%s: Disconnected gracefully" % client})
+    conn.send(body=message, destination=destination)
     conn.disconnect()
     print('\n\nKeyboard exception received. Exiting.')
     exit()
